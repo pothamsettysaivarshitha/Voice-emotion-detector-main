@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Emotion Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#1E40AF',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
+        
+        .recording {
+            animation: recording 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes recording {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">
+                🎤 Voice Emotion Detection
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Record your voice to detect emotions using AI
+            </p>
+        </div>
+
+        <!-- Model Selection -->
+        <div class="max-w-4xl mx-auto mb-8">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                    🤖 Select AI Model
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="modelSelection">
+                    <!-- Models will be loaded dynamically -->
+                </div>
+                <div class="mt-4 text-sm text-gray-500">
+                    <p>Selected model: <span id="selectedModelName" class="font-semibold">Rule-Based</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-2xl mx-auto">
+            <!-- Recording Section -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                        🎙️ Record Voice
+                    </h2>
+                    
+                    <div class="text-center">
+                        <div id="recordButton" class="w-24 h-24 mx-auto mb-6 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors">
+                            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        
+                        <p id="recordStatus" class="text-lg text-gray-600 mb-4">Click to start recording</p>
+                        <p class="text-sm text-gray-500">Record for 3-5 seconds for best results</p>
+                        <p class="text-xs text-yellow-600 mt-2">⚠️ Mobile browsers require HTTPS for microphone access</p>
+                        <div id="browserWarning" class="hidden text-xs text-red-600 mt-2">
+                            ⚠️ Your browser may not support audio recording. Please try Chrome, Firefox, Safari, or Edge.
+                        </div>
+                        <div id="mobileWarning" class="hidden text-xs text-red-600 mt-2">
+                            📱 Mobile detected: Please access via HTTPS (https://localhost:4000) for microphone access
+                        </div>
+                    </div>
+                    
+                    <button id="analyzeRecordedBtn" class="w-full mt-6 bg-accent text-white py-3 px-6 rounded-lg font-semibold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Analyze Recorded Audio
+                    </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="mt-12 bg-white rounded-2xl shadow-xl p-8 hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">🎯 Analysis Results</h2>
+                
+                <div id="loadingSpinner" class="text-center py-8 hidden">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p class="mt-4 text-gray-600">Analyzing audio...</p>
+                </div>
+                
+                <div id="resultsContent" class="hidden">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="text-center">
+                            <div id="emotionIcon" class="text-8xl mb-4"></div>
+                            <h3 id="detectedEmotion" class="text-3xl font-bold text-gray-800 mb-2"></h3>
+                            <p class="text-gray-600">Detected Emotion</p>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-600">Confidence</span>
+                                    <span id="confidenceScore" class="font-semibold"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div id="confidenceBar" class="bg-primary h-3 rounded-full transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6">
+                                <button id="tryAgainBtn" class="w-full bg-gray-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-600 transition-colors">
+                                    Try Another Audio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="hidden text-center py-8">
+                    <div class="text-6xl mb-4">❌</div>
+                    <h3 class="text-xl font-semibold text-red-600 mb-2">Analysis Failed</h3>
+                    <p id="errorText" class="text-gray-600 mb-4"></p>
+                    <button id="retryBtn" class="bg-red-500 text-white py-2 px-6 rounded-lg font-semibold hover:bg-red-600 transition-colors">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-16 text-gray-500">
+            <p>Powered by Flask & AI Emotion Detection</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/audio-recorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
